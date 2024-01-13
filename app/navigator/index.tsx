@@ -3,6 +3,7 @@ import { StyleSheet } from "react-native";
 import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import colors from "@utils/colors";
 import AuthNavigator from "./AuthNavigator";
+import AppNavigator from "./AppNavigator";
 
 const MyTheme = {
   ...DefaultTheme,
@@ -15,9 +16,11 @@ const MyTheme = {
 interface Props {}
 
 const Navigator: FC<Props> = (props) => {
+  const loggedIn = true;
+
   return (
     <NavigationContainer theme={MyTheme}>
-      <AuthNavigator />
+      {!loggedIn ? <AuthNavigator /> : <AppNavigator />}
     </NavigationContainer>
   );
 };

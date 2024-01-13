@@ -6,13 +6,52 @@ import FormInput from "@ui/FormInput";
 import FormNavigator from "@ui/FormNavigator";
 import WelcomeHeader from "@ui/WelcomeHeader";
 import { AuthStackParamList } from "app/navigator/AuthNavigator";
-import { FC } from "react";
+import { FC, useState } from "react";
 import { View, StyleSheet } from "react-native";
+import * as yup from "yup";
+import axios from "axios";
+import { newUserSchema, yupValidate } from "@utils/validator";
+import { runAxiosAsync } from "app/api/runAxiosAsync";
+import { showMessage } from "react-native-flash-message";
+import client from "app/api/client";
+import { SignInRes } from "./SignIn";
 
 interface Props {}
 
 const SignUp: FC<Props> = (props) => {
+  const [userInfo, setUserInfo] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+  const [busy, setBusy] = useState(false);
   const { navigate } = useNavigation<NavigationProp<AuthStackParamList>>();
+
+  const handleChange = (name: string) => (text: string) => {
+    setUserInfo({ ...userInfo, [name]: text });
+  };
+
+  const handleSubmit = async () => {
+    const { values, error } = await yupValidate(newUserSchema, userInfo);
+
+    if (error) return showMessage({ message: error, type: "danger" });
+
+    setBusy(true);
+    const res = await runAxiosAsync<{ message: string }>(
+      client.post("/auth/sign-up", values)
+    );
+
+    if (res?.message) {
+      showMessage({ message: res.message, type: "success" });
+      const signInRes = await runAxiosAsync<SignInRes>(
+        client.post("/auth/sign-in", values)
+      );
+      console.log(signInRes);
+    }
+    setBusy(false);
+  };
+
+  const { email, name, password } = userInfo;
 
   return (
     <CustomKeyAvoidingView>
@@ -20,15 +59,26 @@ const SignUp: FC<Props> = (props) => {
         <WelcomeHeader />
 
         <View style={styles.formContainer}>
-          <FormInput placeholder="Name" />
+          <FormInput
+            placeholder="Name"
+            value={name}
+            onChangeText={handleChange("name")}
+          />
           <FormInput
             placeholder="Email"
             keyboardType="email-address"
             autoCapitalize="none"
+            value={email}
+            onChangeText={handleChange("email")}
           />
-          <FormInput placeholder="Password" secureTextEntry />
+          <FormInput
+            placeholder="Password"
+            secureTextEntry
+            value={password}
+            onChangeText={handleChange("password")}
+          />
 
-          <AppButton title="Sign Up" />
+          <AppButton active={!busy} title="Sign Up" onPress={handleSubmit} />
 
           <FormDivider />
 
