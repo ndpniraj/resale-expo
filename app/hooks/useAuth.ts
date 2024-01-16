@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import asyncStorage, { Keys } from "@utils/asyncStorage";
 import client from "app/api/client";
 import { runAxiosAsync } from "app/api/runAxiosAsync";
 import { getAuthState, updateAuthState } from "app/store/auth";
@@ -35,9 +36,16 @@ const useAuth = () => {
 
     if (res) {
       // store the tokens
-      await AsyncStorage.setItem("access-token", res.tokens.access);
-      await AsyncStorage.setItem("refresh-token", res.tokens.refresh);
-      dispatch(updateAuthState({ profile: res.profile, pending: false }));
+      await asyncStorage.save(Keys.AUTH_TOKEN, res.tokens.access);
+      await asyncStorage.save(Keys.REFRESH_TOKEN, res.tokens.refresh);
+      // await AsyncStorage.setItem("access-token", res.tokens.access);
+      // await AsyncStorage.setItem("refresh-token", res.tokens.refresh);
+      dispatch(
+        updateAuthState({
+          profile: { ...res.profile, accessToken: res.tokens.access },
+          pending: false,
+        })
+      );
     } else {
       dispatch(updateAuthState({ profile: null, pending: false }));
     }
