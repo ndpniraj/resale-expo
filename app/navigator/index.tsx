@@ -12,6 +12,7 @@ import LoadingSpinner from "@ui/LoadingSpinner";
 import useAuth from "app/hooks/useAuth";
 import TabNavigator from "./TabNavigator";
 import useClient from "app/hooks/useClient";
+import asyncStorage, { Keys } from "@utils/asyncStorage";
 
 const MyTheme = {
   ...DefaultTheme,
@@ -19,6 +20,16 @@ const MyTheme = {
     ...DefaultTheme.colors,
     background: colors.white,
   },
+};
+
+type ProfileRes = {
+  profile: {
+    id: string;
+    name: string;
+    email: string;
+    verified: boolean;
+    avatar?: string;
+  };
 };
 
 interface Props {}
@@ -30,10 +41,10 @@ const Navigator: FC<Props> = (props) => {
   const { authClient } = useClient();
 
   const fetchAuthState = async () => {
-    const token = await AsyncStorage.getItem("access-token");
+    const token = await asyncStorage.get(Keys.AUTH_TOKEN);
     if (token) {
       dispatch(updateAuthState({ pending: true, profile: null }));
-      const res = await runAxiosAsync<{ profile: Profile }>(
+      const res = await runAxiosAsync<ProfileRes>(
         authClient.get("/auth/profile", {
           headers: {
             Authorization: "Bearer " + token,
@@ -42,7 +53,12 @@ const Navigator: FC<Props> = (props) => {
       );
 
       if (res) {
-        dispatch(updateAuthState({ pending: false, profile: res.profile }));
+        dispatch(
+          updateAuthState({
+            pending: false,
+            profile: { ...res.profile, accessToken: token },
+          })
+        );
       } else {
         dispatch(updateAuthState({ pending: false, profile: null }));
       }
