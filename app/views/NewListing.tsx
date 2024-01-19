@@ -25,6 +25,9 @@ import { newProductSchema, yupValidate } from "@utils/validator";
 import useClient from "app/hooks/useClient";
 import { runAxiosAsync } from "app/api/runAxiosAsync";
 import LoadingSpinner from "@ui/LoadingSpinner";
+import OptionSelector from "./OptionSelector";
+import { selectImages } from "@utils/helper";
+import CategoryOptions from "@components/CategoryOptions";
 
 interface Props {}
 
@@ -103,21 +106,8 @@ const NewListing: FC<Props> = (props) => {
   };
 
   const handleOnImageSelection = async () => {
-    try {
-      const { assets } = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: false,
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.3,
-        allowsMultipleSelection: true,
-      });
-
-      if (!assets) return;
-
-      const imageUris = assets.map(({ uri }) => uri);
-      setImages([...images, ...imageUris]);
-    } catch (error) {
-      showMessage({ message: (error as any).message, type: "danger" });
-    }
+    const newImages = await selectImages();
+    setImages([...images, ...newImages]);
   };
 
   return (
@@ -174,13 +164,15 @@ const NewListing: FC<Props> = (props) => {
           }
         />
 
-        <Pressable
-          style={styles.categorySelector}
+        <CategoryOptions
+          onSelect={handleChange("category")}
+          title={category || "Category"}
+        />
+
+        {/* <OptionSelector
+          title=
           onPress={() => setShowCategoryModal(true)}
-        >
-          <Text style={styles.categoryTitle}>{category || "Category"}</Text>
-          <AntDesign name="caretdown" color={colors.primary} />
-        </Pressable>
+        /> */}
 
         <FormInput
           value={description}
@@ -192,7 +184,7 @@ const NewListing: FC<Props> = (props) => {
 
         <AppButton title="List Product" onPress={handleSubmit} />
 
-        <OptionModal
+        {/* <OptionModal
           visible={showCategoryModal}
           onRequestClose={setShowCategoryModal}
           options={categories}
@@ -202,7 +194,7 @@ const NewListing: FC<Props> = (props) => {
           onPress={(item) =>
             setProductInfo({ ...productInfo, category: item.name })
           }
-        />
+        /> */}
 
         {/* Image Options */}
         <OptionModal
@@ -255,20 +247,6 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 7,
     marginLeft: 5,
-  },
-  categorySelector: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    marginBottom: 15,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: colors.deActive,
-    borderRadius: 5,
-  },
-  categoryTitle: {
-    color: colors.primary,
   },
   imageOption: {
     fontWeight: "600",
