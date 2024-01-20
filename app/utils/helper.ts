@@ -8,7 +8,9 @@ export const formatPrice = (amount: number) => {
   }).format(amount);
 };
 
-export const selectImages = async () => {
+export const selectImages = async (
+  options?: ImagePicker.ImagePickerOptions
+) => {
   let result: string[] = [];
   try {
     const { assets } = await ImagePicker.launchImageLibraryAsync({
@@ -16,6 +18,7 @@ export const selectImages = async () => {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.3,
       allowsMultipleSelection: true,
+      ...options,
     });
 
     if (assets) {
