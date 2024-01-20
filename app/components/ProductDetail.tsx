@@ -3,10 +3,10 @@ import colors from "@utils/colors";
 import { formatDate } from "@utils/date";
 import { formatPrice } from "@utils/helper";
 import size from "@utils/size";
-import { Product } from "@views/SingleProduct";
 import { FC } from "react";
 import { View, StyleSheet, Text, ScrollView } from "react-native";
 import ImageSlider from "./ImageSlider";
+import { Product } from "app/store/listings";
 
 interface Props {
   product: Product;
