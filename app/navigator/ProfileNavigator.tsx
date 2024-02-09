@@ -15,7 +15,10 @@ export type ProfileNavigatorParamList = {
   Listings: undefined;
   SingleProduct: { product?: Product; id?: string };
   EditProduct: { product: Product };
-  ChatWindow: undefined;
+  ChatWindow: {
+    conversationId: string;
+    peerProfile: { id: string; name: string; avatar?: string };
+  };
 };
 
 const Stack = createNativeStackNavigator<ProfileNavigatorParamList>();

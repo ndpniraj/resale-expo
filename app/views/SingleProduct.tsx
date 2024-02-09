@@ -16,6 +16,7 @@ import { showMessage } from "react-native-flash-message";
 import LoadingSpinner from "@ui/LoadingSpinner";
 import { useDispatch } from "react-redux";
 import { Product, deleteItem } from "app/store/listings";
+import ChatIcon from "@components/ChatIcon";
 
 type Props = NativeStackScreenProps<ProfileNavigatorParamList, "SingleProduct">;
 
@@ -33,13 +34,14 @@ const menuOptions = [
 const SingleProduct: FC<Props> = ({ route, navigation }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [fetchingChatId, setFetchingChatId] = useState(false);
   const [productInfo, setProductInfo] = useState<Product>();
   const { authState } = useAuth();
   const { authClient } = useClient();
   const dispatch = useDispatch();
   const { product, id } = route.params;
 
-  const isAdmin = authState.profile?.id === product?.seller.id;
+  const isAdmin = authState.profile?.id === productInfo?.seller.id;
 
   const confirmDelete = async () => {
     const id = product?.id;
@@ -77,6 +79,22 @@ const SingleProduct: FC<Props> = ({ route, navigation }) => {
     }
   };
 
+  const onChatBtnPress = async () => {
+    if (!productInfo) return;
+
+    setFetchingChatId(true);
+    const res = await runAxiosAsync<{ conversationId: string }>(
+      authClient.get("/conversation/with/" + productInfo.seller.id)
+    );
+    setFetchingChatId(false);
+    if (res) {
+      navigation.navigate("ChatWindow", {
+        conversationId: res.conversationId,
+        peerProfile: productInfo.seller,
+      });
+    }
+  };
+
   useEffect(() => {
     if (id) fetchProductInfo(id);
 
@@ -94,12 +112,9 @@ const SingleProduct: FC<Props> = ({ route, navigation }) => {
       <View style={styles.container}>
         {productInfo ? <ProductDetail product={productInfo} /> : <></>}
 
-        <Pressable
-          onPress={() => navigation.navigate("ChatWindow")}
-          style={styles.messageBtn}
-        >
-          <AntDesign name="message1" size={20} color={colors.white} />
-        </Pressable>
+        {!isAdmin && (
+          <ChatIcon onPress={onChatBtnPress} busy={fetchingChatId} />
+        )}
       </View>
       <OptionModal
         options={menuOptions}
@@ -137,17 +152,6 @@ const styles = StyleSheet.create({
   optionTitle: {
     paddingLeft: 5,
     color: colors.primary,
-  },
-  messageBtn: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.active,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "absolute",
-    bottom: 20,
-    right: 20,
   },
 });
 

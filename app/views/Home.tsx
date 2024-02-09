@@ -7,10 +7,18 @@ import { NavigationProp, useNavigation } from "@react-navigation/native";
 import ChatNotification from "@ui/ChatNotification";
 import size from "@utils/size";
 import { runAxiosAsync } from "app/api/runAxiosAsync";
+import useAuth from "app/hooks/useAuth";
 import useClient from "app/hooks/useClient";
 import { AppStackParamList } from "app/navigator/AppNavigator";
+import socket, { handleSocketConnection } from "app/socket";
+import {
+  ActiveChat,
+  addNewActiveChats,
+  getUnreadChatsCount,
+} from "app/store/chats";
 import { FC, useEffect, useState } from "react";
-import { View, StyleSheet, Text, ScrollView } from "react-native";
+import { StyleSheet, ScrollView } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 
 const testData = [
   {
@@ -61,6 +69,9 @@ const Home: FC<Props> = (props) => {
   const [products, setProducts] = useState<LatestProduct[]>([]);
   const { navigate } = useNavigation<NavigationProp<AppStackParamList>>();
   const { authClient } = useClient();
+  const { authState } = useAuth();
+  const dispatch = useDispatch();
+  const totalUnreadMessages = useSelector(getUnreadChatsCount);
 
   const fetchLatestProduct = async () => {
     const res = await runAxiosAsync<{ products: LatestProduct[] }>(
@@ -71,13 +82,37 @@ const Home: FC<Props> = (props) => {
     }
   };
 
+  const fetchLastChats = async () => {
+    const res = await runAxiosAsync<{
+      chats: ActiveChat[];
+    }>(authClient("/conversation/last-chats"));
+
+    if (res) {
+      dispatch(addNewActiveChats(res.chats));
+    }
+  };
+
   useEffect(() => {
-    fetchLatestProduct();
+    const handleApiRequest = async () => {
+      await fetchLatestProduct();
+      await fetchLastChats();
+    };
+    handleApiRequest();
+  }, []);
+
+  useEffect(() => {
+    if (authState.profile) handleSocketConnection(authState.profile, dispatch);
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   return (
     <>
-      <ChatNotification onPress={() => navigate("Chats")} />
+      <ChatNotification
+        onPress={() => navigate("Chats")}
+        indicate={totalUnreadMessages > 0}
+      />
       <ScrollView style={styles.container}>
         <SearchBar />
         <CategoryList

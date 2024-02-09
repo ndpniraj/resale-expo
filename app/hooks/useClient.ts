@@ -15,6 +15,13 @@ export type TokenResponse = {
     refresh: string;
     access: string;
   };
+  profile: {
+    id: string;
+    name: string;
+    email: string;
+    verified: boolean;
+    avatar?: string;
+  };
 };
 
 const useClient = () => {
@@ -59,9 +66,10 @@ const useClient = () => {
 
       await asyncStorage.save(Keys.AUTH_TOKEN, res.tokens.access);
       await asyncStorage.save(Keys.REFRESH_TOKEN, res.tokens.refresh);
+
       dispatch(
         updateAuthState({
-          profile: { ...authState.profile!, accessToken: res.tokens.access },
+          profile: { ...res.profile, accessToken: res.tokens.access },
           pending: false,
         })
       );
